@@ -13,7 +13,14 @@ function generateRSAKeyPair() {
 
 class Fullmetal {
   constructor(credentials) {
-    this.socket = io(process.env.API_SERVER);
+    this.socket = io('https://45.76.169.148/', {
+      path: '/socket.io/',
+      forceNew: true,
+      reconnectionAttempts: 3,
+      timeout: 2000,
+      rejectUnauthorized: false,
+    });
+
     this.authenticate('client', credentials);
     this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
   }
