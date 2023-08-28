@@ -1,6 +1,7 @@
 // index.js
 const cryptoJs = require('crypto-js');
 const { io } = require('socket.io-client');
+require('dotenv').config();
 
 function generateRSAKeyPair() {
   const keyPair = cryptoJs.lib.WordArray.random(32);
@@ -12,7 +13,7 @@ function generateRSAKeyPair() {
 
 class Fullmetal {
   constructor(credentials) {
-    this.socket = io('http://localhost:5000');
+    this.socket = io(process.env.API_SERVER);
     this.authenticate('client', credentials);
     this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
   }
