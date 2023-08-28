@@ -7,8 +7,12 @@
 import Fullmetal from 'fullmetal-client';
 const fullmetal = new Fullmetal('API_KEY'); // api key in api.fullmetal.ai
 
-await fullmetal.sendPrompt(question);
+// send prompt
+var prompt = "How many countries are there in the world?"
+await fullmetal.sendPrompt(prompt);
+
+// response provided by fullmetal API
 fullmetal.onResponse((response) => {
-    // YOUR CODE TO handle the response
+    // your code goes here
 });
 ```
