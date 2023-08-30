@@ -13,12 +13,16 @@ function generateRSAKeyPair() {
 
 class Fullmetal {
   constructor(credentials) {
-    this.socket = io('https://45.76.169.148/', {
+    this.socket = io('https://api.fullmetal.ai/', {
       path: '/socket.io/',
       forceNew: true,
       reconnectionAttempts: 3,
       timeout: 2000,
       rejectUnauthorized: false,
+    });
+
+    this.socket.on('connect', () => {
+      console.log(this.socket.id);
     });
 
     this.authenticate('client', credentials);
@@ -69,17 +73,13 @@ class Fullmetal {
   authenticate(userType, credentials) {
     this.socket.emit('authenticate', { userType, credentials });
   }
-  sendPrompt(prompt) {
-    // this.performKeyExchange(() => {
-    //   this.socket.emit('prompt', this.encrypt(prompt));
-    // });
-    this.socket.emit('prompt', prompt);
+  sendPrompt(prompt, refId) {
+    this.socket.emit('prompt', { prompt, refId });
   }
   onResponse(cb) {
-    // this.socket.on('response', (answer) => {
-    //   cb(this.decrypt(answer));
-    // });
-    this.socket.on('response', cb);
+    this.socket.on('response', ({ response, refId }) => {
+      cb({ response, refId });
+    });
   }
   onError(cb) {
     this.socket.on('error', cb);
