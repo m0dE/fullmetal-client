@@ -13,7 +13,7 @@ function generateRSAKeyPair() {
 
 class Fullmetal {
   constructor(credentials) {
-    this.socket = io('https://api.fullmetal.ai/', {
+    this.socket = io('https://45.76.169.148/', {
       path: '/socket.io/',
       forceNew: true,
       reconnectionAttempts: 3,
