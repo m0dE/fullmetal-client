@@ -1,7 +1,7 @@
 // index.js
 const cryptoJs = require('crypto-js');
 const { io } = require('socket.io-client');
-require('dotenv').config();
+const config = require('./config');
 
 function generateRSAKeyPair() {
   const keyPair = cryptoJs.lib.WordArray.random(32);
@@ -12,21 +12,32 @@ function generateRSAKeyPair() {
 }
 
 class Fullmetal {
-  constructor(credentials) {
-    this.socket = io('https://api.fullmetal.ai/', {
-      path: '/socket.io/',
-      forceNew: true,
-      reconnectionAttempts: 3,
-      timeout: 2000,
-      rejectUnauthorized: false,
-    });
+  constructor(options) {
+    if (!options)
+      throw new Error('Missing Configuration: You need to provide a apikey');
 
-    this.socket.on('connect', () => {
-      console.log(this.socket.id);
-    });
+    if (options) {
+      if (!options.apiKey) {
+        throw new Error('Missing Configuration: apiKey is required');
+      }
+      this.socket = io(config.APIURL, {
+        path: '/socket.io/',
+        forceNew: true,
+        reconnectionAttempts: 3,
+        timeout: 2000,
+        rejectUnauthorized: false,
+      });
 
-    this.authenticate('client', credentials);
-    this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
+      this.socket.on('connect', () => {
+        console.log(this.socket.id);
+      });
+
+      this.authenticate({ userType: 'client', options });
+      this.onError((error) => {
+        console.log(error);
+      });
+      this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
+    }
   }
 
   // Client-side encryption using LucidAgent's public key
@@ -70,8 +81,8 @@ class Fullmetal {
     });
   }
 
-  authenticate(userType, credentials) {
-    this.socket.emit('authenticate', { userType, credentials });
+  authenticate(data) {
+    this.socket.emit('authenticate', data);
   }
   sendPrompt(prompt, refId) {
     this.socket.emit('prompt', { prompt, refId });
@@ -82,7 +93,10 @@ class Fullmetal {
     });
   }
   onError(cb) {
-    this.socket.on('error', cb);
+    this.socket.on('error', (error) => {
+      cb(error);
+      throw new Error(error);
+    });
   }
 }
 module.exports = Fullmetal;
