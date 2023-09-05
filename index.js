@@ -84,8 +84,8 @@ class Fullmetal {
   authenticate(data) {
     this.socket.emit('authenticate', data);
   }
-  sendPrompt(prompt, refId) {
-    this.socket.emit('prompt', { prompt, refId });
+  sendPrompt(prompt, refId, options) {
+    this.socket.emit('prompt', { prompt, refId, options });
   }
   onResponse(cb) {
     this.socket.on('response', ({ response, refId }) => {
@@ -93,9 +93,14 @@ class Fullmetal {
     });
   }
   onError(cb) {
-    this.socket.on('error', (error) => {
-      cb(error);
-      throw new Error(error);
+    this.socket.on('error', (data) => {
+      cb(data);
+      if (data.stopExecution) throw new Error(error);
+    });
+  }
+  onResponseQueue(cb) {
+    this.socket.on('responseQueuedNumber', (data) => {
+      cb(data);
     });
   }
 }
