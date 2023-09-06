@@ -21,15 +21,33 @@ class Fullmetal {
         throw new Error('Missing Configuration: apiKey is required');
       }
       this.socket = io(config.APIURL, {
+        transports: ['websocket'],
+        upgrade: false,
         path: '/socket.io/',
         forceNew: true,
         reconnectionAttempts: 3,
         timeout: 2000,
         rejectUnauthorized: false,
+        reconnection: true,
+        reconnectionAttempts: 5, // Number of reconnection attempts
+        reconnectionDelay: 1000, // Initial delay between reconnection attempts (in milliseconds)
+        reconnectionDelayMax: 5000, // Maximum delay between reconnection attempts (in milliseconds)
+        randomizationFactor: 0.5, // Randomization factor for reconnection delay
+      });
+      this.socket.on('reconnect', (attemptNumber) => {
+        console.log(`Reconnected after ${attemptNumber} attempts`);
+      });
+
+      this.socket.on('reconnecting', (attemptNumber) => {
+        console.log(`Reconnecting attempt ${attemptNumber}`);
+      });
+
+      this.socket.on('reconnect_error', (error) => {
+        console.error('Reconnection error:', error);
       });
 
       this.socket.on('connect', () => {
-        console.log(this.socket.id);
+        console.log(this.socket.id, 50);
       });
 
       this.authenticate({ userType: 'client', options });
@@ -85,6 +103,7 @@ class Fullmetal {
     this.socket.emit('authenticate', data);
   }
   sendPrompt(prompt, refId, options) {
+    console.log(this.socket.id, 23);
     this.socket.emit('prompt', { prompt, refId, options });
   }
   onResponse(cb) {
