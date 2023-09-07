@@ -25,7 +25,6 @@ class Fullmetal {
         upgrade: false,
         path: '/socket.io/',
         forceNew: true,
-        reconnectionAttempts: 3,
         timeout: 2000,
         rejectUnauthorized: false,
         reconnection: true,
@@ -50,9 +49,18 @@ class Fullmetal {
         console.log(this.socket.id, 50);
       });
 
-      this.authenticate({ userType: 'client', options });
-      this.onError((error) => {
-        console.log(error);
+      this.socket.on('connect', (socket) => {
+        this.authenticate({ userType: 'client', options });
+        this.onError((error) => {
+          console.log(error);
+        });
+      });
+
+      setInterval(() => {
+        this.socket.emit('ping', new Date());
+      }, 10000);
+      this.socket.on('pong', (data) => {
+        // console.log('Pong at', this.socket.id, data);
       });
       this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
     }
@@ -107,8 +115,8 @@ class Fullmetal {
     this.socket.emit('prompt', { prompt, refId, options });
   }
   onResponse(cb) {
-    this.socket.on('response', ({ response, refId }) => {
-      cb({ response, refId });
+    this.socket.on('response', (response) => {
+      cb(response);
     });
   }
   onError(cb) {
@@ -121,6 +129,10 @@ class Fullmetal {
     this.socket.on('responseQueuedNumber', (data) => {
       cb(data);
     });
+  }
+
+  disconnectConnection() {
+    this.socket.disconnect();
   }
 }
 module.exports = Fullmetal;
