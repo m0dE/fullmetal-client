@@ -122,7 +122,7 @@ class Fullmetal {
   onError(cb) {
     this.socket.on('error', (data) => {
       cb(data);
-      if (data.stopExecution) throw new Error(error);
+      if (data.stopExecution) throw new Error(data.message);
     });
   }
   onResponseQueue(cb) {
