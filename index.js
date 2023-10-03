@@ -4,65 +4,78 @@ const { io } = require('socket.io-client');
 const config = require('./config');
 
 function generateRSAKeyPair() {
-  const keyPair = cryptoJs.lib.WordArray.random(32);
-  return {
-    publicKey: keyPair.toString(),
-    privateKey: keyPair.toString(),
-  };
+  try {
+    const keyPair = cryptoJs.lib.WordArray.random(32);
+    return {
+      publicKey: keyPair.toString(),
+      privateKey: keyPair.toString(),
+    };
+  } catch (error) {
+    config.rollbar.error(error);
+    console.log(error);
+  }
 }
 
 class Fullmetal {
   constructor(options) {
-    if (!options)
-      throw new Error('Missing Configuration: You need to provide a apikey');
-
-    if (options) {
-      if (!options.apiKey) {
-        throw new Error('Missing Configuration: apiKey is required');
+    try {
+      if (!options) {
+        throw new Error('Missing Configuration: You need to provide a apikey');
       }
-      this.socket = io(config.APIURL, {
-        transports: ['websocket'],
-        upgrade: false,
-        path: '/socket.io/',
-        forceNew: true,
-        timeout: 2000,
-        rejectUnauthorized: false,
-        reconnection: true,
-        reconnectionAttempts: 5, // Number of reconnection attempts
-        reconnectionDelay: 1000, // Initial delay between reconnection attempts (in milliseconds)
-        reconnectionDelayMax: 5000, // Maximum delay between reconnection attempts (in milliseconds)
-        randomizationFactor: 0.5, // Randomization factor for reconnection delay
-      });
-      this.socket.on('reconnect', (attemptNumber) => {
-        console.log(`Reconnected after ${attemptNumber} attempts`);
-      });
 
-      this.socket.on('reconnecting', (attemptNumber) => {
-        console.log(`Reconnecting attempt ${attemptNumber}`);
-      });
-
-      this.socket.on('reconnect_error', (error) => {
-        console.error('Reconnection error:', error);
-      });
-
-      this.socket.on('connect', () => {
-        console.log(this.socket.id, 50);
-      });
-
-      this.socket.on('connect', (socket) => {
-        this.authenticate({ userType: 'client', options });
-        this.onError((error) => {
-          console.log(error);
+      if (options) {
+        if (!options.apiKey) {
+          throw new Error('Missing Configuration: apiKey is required');
+        }
+        this.socket = io(config.APIURL, {
+          transports: ['websocket'],
+          upgrade: false,
+          path: '/socket.io/',
+          forceNew: true,
+          timeout: 2000,
+          rejectUnauthorized: false,
+          reconnection: true,
+          reconnectionAttempts: 5, // Number of reconnection attempts
+          reconnectionDelay: 1000, // Initial delay between reconnection attempts (in milliseconds)
+          reconnectionDelayMax: 5000, // Maximum delay between reconnection attempts (in milliseconds)
+          randomizationFactor: 0.5, // Randomization factor for reconnection delay
         });
-      });
+        this.socket.on('reconnect', (attemptNumber) => {
+          console.log(`Reconnected after ${attemptNumber} attempts`);
+        });
 
-      setInterval(() => {
-        this.socket.emit('ping', new Date());
-      }, 10000);
-      this.socket.on('pong', (data) => {
-        // console.log('Pong at', this.socket.id, data);
-      });
-      this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
+        this.socket.on('reconnecting', (attemptNumber) => {
+          console.log(`Reconnecting attempt ${attemptNumber}`);
+        });
+
+        this.socket.on('reconnect_error', (error) => {
+          config.rollbar.error(error);
+          console.error('Reconnection error:', error);
+        });
+
+        this.socket.on('connect', () => {
+          console.log(this.socket.id, 50);
+        });
+
+        this.socket.on('connect', (socket) => {
+          this.authenticate({ userType: 'client', options });
+          this.onError((error) => {
+            config.rollbar.error(error);
+            console.log(error);
+          });
+        });
+
+        setInterval(() => {
+          this.socket.emit('ping', new Date());
+        }, 10000);
+        this.socket.on('pong', (data) => {
+          // console.log('Pong at', this.socket.id, data);
+        });
+        this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
+      }
+    } catch (error) {
+      config.rollbar.error(error);
+      console.log(error);
     }
   }
 
@@ -108,31 +121,63 @@ class Fullmetal {
   }
 
   authenticate(data) {
-    this.socket.emit('authenticate', data);
+    try {
+      this.socket.emit('authenticate', data);
+    } catch (error) {
+      config.rollbar.error(error);
+      console.log(error);
+    }
   }
   sendPrompt(prompt, refId, options) {
-    console.log(this.socket.id, 23);
-    this.socket.emit('prompt', { prompt, refId, options });
+    try {
+      console.log(this.socket.id, 23);
+      this.socket.emit('prompt', { prompt, refId, options });
+    } catch (error) {
+      config.rollbar.error(error);
+      console.log(error);
+    }
   }
+
   onResponse(cb) {
-    this.socket.on('response', (response) => {
-      cb(response);
-    });
+    try {
+      this.socket.on('response', (response) => {
+        cb(response);
+      });
+    } catch (error) {
+      config.rollbar.error(error);
+      console.log(error);
+    }
   }
   onError(cb) {
-    this.socket.on('error', (data) => {
-      cb(data);
-      if (data.stopExecution) throw new Error(data.message);
-    });
+    try {
+      this.socket.on('error', (data) => {
+        cb(data);
+        config.rollbar.error(data);
+        if (data.stopExecution) throw new Error(data.message);
+      });
+    } catch (error) {
+      config.rollbar.error(error);
+      console.log(error);
+    }
   }
   onResponseQueue(cb) {
-    this.socket.on('responseQueuedNumber', (data) => {
-      cb(data);
-    });
+    try {
+      this.socket.on('responseQueuedNumber', (data) => {
+        cb(data);
+      });
+    } catch (error) {
+      config.rollbar.error(error);
+      console.log(error);
+    }
   }
 
   disconnectConnection() {
-    this.socket.disconnect();
+    try {
+      this.socket.disconnect();
+    } catch (error) {
+      config.rollbar.error(error);
+      console.log(error);
+    }
   }
 }
 module.exports = Fullmetal;
