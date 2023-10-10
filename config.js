@@ -5,7 +5,7 @@ exports.APIURL = 'https://api.fullmetal.ai/';
 
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 exports.rollbar = new Rollbar({
-  accessToken: process.env.ROLLBAR_ACCESS_TOKEN,
+  accessToken: process.env.ROLLBAR_ACCESS_TOKEN || '',
   captureUncaught: true,
   captureUnhandledRejections: true,
 });
