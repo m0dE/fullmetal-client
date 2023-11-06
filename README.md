@@ -37,3 +37,5 @@ io.on('connection', async (socket) => {
   });
 });
 ```
+## DEMO
+Click [here](https://github.com/m0dE/fullmetal-chat-example/) to see the sample code
