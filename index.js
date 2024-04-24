@@ -73,6 +73,16 @@ class Fullmetal {
         });
         this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
       }
+      this.socket.on('close', (socket) => {
+        config.rollbar.info(` ${new Date()} - Socket get closed`);
+        console.log(` ${new Date()} - Socket get closed`);
+        process.exit(1); // purposely restarting the app
+      });
+      this.socket.on('disconnect', (socket) => {
+        config.rollbar.info(` ${new Date()} - Disconnected from API server`);
+        console.log(` ${new Date()} - Disconnected from API server`);
+        process.exit(1); // purposely restarting the app
+      });
     } catch (error) {
       config.rollbar.error(error);
       console.log(error);
