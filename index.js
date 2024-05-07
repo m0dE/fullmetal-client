@@ -18,6 +18,7 @@ function generateRSAKeyPair() {
 
 class Fullmetal {
   constructor(options) {
+    this.restart = true;
     try {
       if (!options) {
         throw new Error('Missing Configuration: You need to provide a apikey');
@@ -76,12 +77,16 @@ class Fullmetal {
       this.socket.on('close', (socket) => {
         config.rollbar.info(` ${new Date()} - Socket get closed`);
         console.log(` ${new Date()} - Socket get closed`);
-        process.exit(1); // purposely restarting the app
+        if (this.restart) {
+          process.exit(1);// purposely restarting the app
+        } 
       });
       this.socket.on('disconnect', (socket) => {
         config.rollbar.info(` ${new Date()} - Disconnected from API server`);
         console.log(` ${new Date()} - Disconnected from API server`);
-        process.exit(1); // purposely restarting the app
+        if (this.restart) {
+          process.exit(1);// purposely restarting the app
+        } 
       });
     } catch (error) {
       config.rollbar.error(error);
@@ -181,9 +186,10 @@ class Fullmetal {
     }
   }
 
-  disconnectConnection() {
+  disconnectConnection(restart) {
     try {
-      this.socket.disconnect();
+      this.restart = restart;
+      this.socket.disconnect(restart);
     } catch (error) {
       config.rollbar.error(error);
       console.log(error);
