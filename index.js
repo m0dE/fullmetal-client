@@ -39,7 +39,7 @@ class Fullmetal {
           rejectUnauthorized: false,
           reconnection: true,
           reconnectionAttempts: 5, // Number of reconnection attempts
-          reconnectionDelay: 1000, // Initial delay between reconnection attempts (in milliseconds)
+          reconnectionDelay: 5000, // Initial delay between reconnection attempts (in milliseconds)
           reconnectionDelayMax: 5000, // Maximum delay between reconnection attempts (in milliseconds)
           randomizationFactor: 0.5, // Randomization factor for reconnection delay
         });
@@ -54,6 +54,13 @@ class Fullmetal {
         this.socket.on('reconnect_error', (error) => {
           config.rollbar.error(error);
           console.error('Reconnection error:', error);
+        });
+
+        this.socket.on("connect_error", (err) => {
+          console.log(`connect_error due to ${err}`);
+          setTimeout(() => {
+            this.socket.connect();
+          }, 5000);
         });
 
         this.socket.on('connect', () => {
