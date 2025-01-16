@@ -30,6 +30,10 @@ class Fullmetal {
         if (!options.hasOwnProperty('doRestart')) {
           options.doRestart = true;
         }
+
+        this.isAuthenticated = false; // Track authentication status
+        this.onAuthenticatedCallback = null; // Store callback for post-authentication
+
         this.socket = io(config.APIURL, {
           transports: ['websocket'],
           upgrade: false,
@@ -65,8 +69,6 @@ class Fullmetal {
           }, 5000);
         });
 
-        this.socket.on('connect', () => {});
-
         this.socket.on('connect', (socket) => {
           this.authenticate({ userType: 'client', options });
           this.onError((error) => {
@@ -84,6 +86,17 @@ class Fullmetal {
           this.isReady(true);
         });
 
+        this.socket.on('authenticated', () => {
+          console.log('Successfully authenticated');
+          this.isAuthenticated = true;
+
+          // Execute callback if provided
+          if (this.onAuthenticatedCallback) {
+            this.onAuthenticatedCallback();
+            this.onAuthenticatedCallback = null; // Clear callback after execution
+          }
+        });
+
         setInterval(() => {
           this.socket.emit('ping', new Date());
         }, 10000);
@@ -93,6 +106,7 @@ class Fullmetal {
         this.secretEncryptionKey = cryptoJs.lib.WordArray.random(32); // Generate a new secret key for each session
 
         this.socket.on('close', (socket) => {
+          this.isAuthenticated = false; // Reset authentication status on disconnect
           config.rollbar.info(` ${new Date()} - Client Socket get closed`);
           console.log(` ${new Date()} - Client Socket get closed`);
           if (options.restartOnDisconnect) {
@@ -100,6 +114,7 @@ class Fullmetal {
           }
         });
         this.socket.on('disconnect', (reason) => {
+          this.isAuthenticated = false; // Reset authentication status on disconnect
           config.rollbar.info(
             `${new Date()} - Client Disconnected from API server. Reason: ${reason}`
           );
@@ -112,6 +127,7 @@ class Fullmetal {
         });
       }
     } catch (error) {
+      this.isAuthenticated = false; // Reset authentication status on disconnect
       config.rollbar.error(error);
       console.log(error);
     }
@@ -157,18 +173,33 @@ class Fullmetal {
       cb();
     });
   }
-
   authenticate(data) {
     try {
       this.socket.emit('authenticate', data);
+
+      this.socket.on('authenticationFailed', (error) => {
+        console.error('Authentication failed:', error);
+      });
     } catch (error) {
       config.rollbar.error(error);
       console.log(error);
     }
   }
+
+  sendPromptAfterAuthentication(prompt, refId, options) {
+    if (this.isAuthenticated) {
+      this.sendPrompt(prompt, refId, options);
+    } else {
+      console.log('Not authenticated. Waiting to send prompt...');
+      this.onAuthenticatedCallback = () => {
+        this.sendPrompt(prompt, refId, options);
+      };
+    }
+  }
+
   sendPrompt(prompt, refId, options) {
     try {
-      console.log(this.socket.id, 23);
+      console.log('Sending prompt:', prompt);
       this.socket.emit('prompt', { prompt, refId, options });
     } catch (error) {
       config.rollbar.error(error);
