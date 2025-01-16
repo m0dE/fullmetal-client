@@ -3,6 +3,7 @@
 1. npm install fullmetal-client
 
 ## Usage
+
 ```
 const io = require('socket.io')();
 import Fullmetal from 'fullmetal-client';
@@ -29,7 +30,7 @@ fullmetal.onResponseQueue(async (response) => {
 
 io.on('connection', async (socket) => {
   socket.on('prompt', async (data) => {
-    await fullmetal.sendPrompt(
+    await fullmetal.sendPromptAfterAuthentication(
       data.prompt,
       socket.id,
       { model: data.model }
@@ -37,5 +38,7 @@ io.on('connection', async (socket) => {
   });
 });
 ```
+
 ## DEMO
+
 Click [here](https://github.com/m0dE/fullmetal-chat-example/) to see the sample code
