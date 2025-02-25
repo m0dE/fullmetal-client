@@ -1,6 +1,6 @@
 {
   "name": "fullmetal-client",
-  "version": "1.0.22",
+  "version": "1.0.25",
   "description": "This package is used to communicate with Fullmetal Server",
   "main": "index.js",
   "scripts": {
